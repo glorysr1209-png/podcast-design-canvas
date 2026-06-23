@@ -50,6 +50,18 @@ Use podcast-appropriate placements:
 
 Each placement should preview against the real canvas layout.
 
+## Preview Contexts
+
+Creators should judge sponsor placement where it is most likely to conflict or read poorly:
+
+- the sponsor read, transition, or acknowledgement moment itself
+- a full desktop view and a mobile vertical crop
+- the thumbnail or cover frame when the mark appears there
+- a moment where the active speaker's face is near the placement
+- the entry into and exit from the sponsored segment
+
+These previews should show the sponsor element on the real canvas layout at the affected moment, not on a generic placeholder, so the creator can confirm it stays readable and does not crowd the speaker or lower-thirds.
+
 ## Conflict Checks
 
 Before export, flag:
