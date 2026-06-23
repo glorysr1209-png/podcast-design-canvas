@@ -93,3 +93,7 @@ When a show template includes recurring speakers, the product should remember th
 Those remembered corrections should stay tied to `docs/show-template-adaptation.md` Adaptation Flow so the creator can keep a helpful starting point for recurring speakers without silently forcing the same correction onto a changed recording setup.
 
 If a recurring guest's look has changed, the creator should be able to reuse the prior preference, adjust it for this episode only, or skip it and keep the template preference for later episodes.
+
+## Maintainer Acceptance Notes
+
+Accept work that helps creators make separately recorded speakers feel visually coherent before preset selection and layout review. Close work that turns matching into technical color-grading tooling, silently forces corrections onto changed recordings, or hides the before-and-after effect from the creator.
