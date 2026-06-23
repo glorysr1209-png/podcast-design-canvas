@@ -69,6 +69,18 @@ Flag issues that affect publish quality:
 
 These checks should link back to the cue placement and review states in `docs/music-cue-setup.md`, so creators can fix the cue in context rather than debug it as a standalone audio asset.
 
+## Review States
+
+Use simple creator-facing states:
+
+- ready — the cue is approved, placed, and does not cover necessary speech
+- needs approval — usage approval is missing for a cue that would ship in the export
+- needs placement — a template or preset expects this cue but it is not in the episode yet
+- speech overlap — the cue makes an important spoken moment hard to hear
+- too prominent — the cue repeats or dominates more than the show format allows
+
+Each state should describe what a listener would notice, such as "Intro music still covers the host's first sentence."
+
 ## Maintainer Acceptance Notes
 
 Accept work that adds reusable, tasteful audio cues for podcast structure and brand identity. Close work that makes creators manage complex audio timelines or encourages constant sound effects throughout the conversation.
