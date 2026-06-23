@@ -60,6 +60,32 @@ Creators should preview pacing on:
 
 Previewing multiple moments prevents the creator from choosing a pacing style that only works for one clip.
 
+## Creator Controls
+
+Keep pacing a single creative choice, not a second editor for every element it touches:
+
+- choose a pacing feel from the named options
+- preview the feel across the sampled moments before applying it
+- apply a pacing feel to the whole episode
+- nudge intensity up or down one step without leaving the preset
+- hold a specific moment at its current pacing when the show needs it
+- open the editing surface for a concrete change — titles, b-roll, captions, framing, pauses, or chapters — to adjust it there instead of here
+- save the chosen pacing feel to the show template
+
+Avoid exposing raw edit timing, per-cut duration handles, or frame-level rhythm automation in the default path.
+
+## Review States
+
+Pacing status should describe what a pacing choice does to the episode in plain creator-facing terms:
+
+- **previewing** — show the pacing feel against the sampled moments and do not change the episode until the creator applies it
+- **applied** — set intensity across the episode; each concrete change appears on the editing surface that owns it, already attached to the right speakers and moments
+- **moment held** — keep a creator-pinned moment at its current pacing even when the surrounding episode feel changes
+- **needs element review** — when a pacing change pushes titles, b-roll, captions, framing, pauses, or chapters past what the creator has approved, take the creator to that editing or review surface rather than resolving it here
+- **saved to template** — store the pacing feel for future episodes, which re-check it against new speakers, length, and chapter timing before treating it as ready
+
+Each state should describe what happens to the episode preview and which editing or review surface the creator lands on, not only the label on the pacing choice. Pacing-level issues that would affect the chosen export destination should appear in the export readiness review alongside the relevant element, not as a separate pacing queue.
+
 ## Maintainer Acceptance Notes
 
 Accept work that makes pacing a simple preset-level creative choice for long-form episodes. Close work that exposes raw edit timing controls too early or optimizes only for short-form clip energy.
