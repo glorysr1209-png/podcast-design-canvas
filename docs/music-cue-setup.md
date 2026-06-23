@@ -44,6 +44,18 @@ Place music by episode purpose before exposing timing controls:
 
 The product should preview each cue against the current episode audio and show the speaker or chapter context around the placement.
 
+## Preview Contexts
+
+A cue that sounds right in isolation can fail once speech, captions, and layout are live, so each placement should be checked on real episode moments before it is approved:
+
+- intro music ending before the first spoken line
+- segment transition sitting between two planned sections with both speakers visible
+- sponsor bed under an active read, with captions and lower-thirds visible
+- outro music starting near the final sign-off, not over the last sentence
+- chapter bumper separating named chapters without burying a guest answer
+
+Every context should use the current episode audio and the same cue, so the creator judges one honest tradeoff instead of approving a placement that only works in a detached music browser.
+
 ## Cue Safety Mapping
 
 `docs/music-sound-cues.md` defines the creator-facing cue types and quality checks that this setup flow should honor once a cue is chosen and placed.
