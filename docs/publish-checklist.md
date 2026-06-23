@@ -23,6 +23,34 @@ Include creator-facing checks:
 
 Each item should link to the place where it can be fixed.
 
+## Review Approvals
+
+When `review approvals complete` appears on the checklist, it should summarize sign-off from the review flows already defined elsewhere rather than introducing a separate approval queue.
+
+Track only the areas that affect the chosen destination. Each area below maps to an existing spec section:
+
+| Approval area | Source spec | Relevant section |
+| --- | --- | --- |
+| host or producer review | `docs/client-review-copy-flow.md` | Resolution States, Agency Fit |
+| guest name and link accuracy | `docs/episode-metadata-publishing.md` | Metadata Fields, Review States |
+| caption and glossary corrections | `docs/transcript-glossary.md` | Glossary Entries, Application |
+| sponsor placement and disclosure | `docs/sponsor-placement-review.md` | Placement Types, Conflict Checks |
+| b-roll, overlays, and title moments | `docs/contextual-broll-moments.md` | Approval Flow |
+| thumbnail or cover frame | `docs/thumbnail-cover-frame.md` | Review Criteria, Export Connection |
+| chapter markers and metadata | `docs/episode-metadata-publishing.md` | Chapter Workflow, Readiness Checks |
+
+Use simple team-facing states:
+
+- not requested
+- waiting
+- changes requested
+- approved
+- skipped
+
+Each approval should show who changed the state, when it changed, and any short note left with the decision. Teams and agencies can require approvals before final export; solo-host workflows should be able to skip areas that do not apply without extra project management.
+
+Unresolved approvals should link back to the exact moment, metadata field, or review copy described in `docs/review-handoff-summary.md` Moment Links.
+
 ## Status
 
 Use simple states:
