@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Intro &amp; Outro Builder Prototype</title>
+    <style>
+      :root {
+        --ink: #16211f;
+        --muted: #5e6b67;
+        --line: #d9e0dd;
+        --surface: #f7faf8;
+        --accent: #136f63;
+        --review: #a15c00;
+        --block: #a52828;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; color: var(--ink); background: #fff; }
+      main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 48px; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { font-size: 32px; line-height: 1.1; margin-bottom: 8px; }
+      .lede { color: var(--muted); max-width: 760px; }
+      .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.95fr); gap: 24px; margin-top: 28px; }
+      .panel { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 18px; }
+      .panel + .panel { margin-top: 18px; }
+
+      .seq-switch { display: inline-flex; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 4px; background: #fff; }
+      .seq-switch button {
+        min-height: 34px; border: 0; border-radius: 999px; background: transparent; color: var(--muted);
+        font: inherit; font-weight: 700; padding: 6px 16px; cursor: pointer;
+      }
+      .seq-switch button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+      .seq-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+      .elements { display: grid; gap: 8px; margin: 14px 0 0; }
+      .element {
+        display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+        border: 1px solid var(--line); border-radius: 7px; background: #fff; padding: 9px 12px;
+      }
+      .element.removed { opacity: 0.55; background: var(--surface); }
+      .element .kind { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+      .element strong { font-size: 14px; display: block; }
+      .element .tag { font-size: 12px; color: var(--muted); }
+      .reorder { display: inline-flex; gap: 4px; }
+      .icon-btn {
+        min-height: 30px; min-width: 30px; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+        color: var(--accent); font: inherit; font-weight: 700; padding: 2px 8px; cursor: pointer;
+      }
+      .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+      button.action {
+        min-height: 38px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent);
+        color: #fff; font: inherit; font-weight: 700; padding: 8px 12px; cursor: pointer;
+      }
+      button.action.secondary { background: #fff; color: var(--accent); }
+      button.action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .status { display: inline-flex; align-items: center; min-height: 32px; border-radius: 999px; padding: 0 14px; font-weight: 800; }
+      .status.draft { color: #2a4c8a; background: #e2ebfb; }
+      .status.adapted { color: #075246; background: #dff5ef; }
+      .status.review { color: var(--review); background: #fff1d6; }
+      .status.approved { color: #075246; background: #cdeee2; }
+      .status.skipped { color: var(--muted); background: #eef2f0; }
+      .status-note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+      .preview-frame { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 12px; margin-top: 12px; }
+      .preview-frame .moment { font-size: 13px; color: var(--muted); }
+      .preview-frame .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .chip { display: inline-flex; align-items: center; min-height: 26px; border-radius: 6px; padding: 0 9px; font-size: 12px; font-weight: 700; background: #eef4f2; color: #075246; }
+      .chip.episode { background: #e2ebfb; color: #2a4c8a; }
+
+      .warnings { display: grid; gap: 8px; margin-top: 12px; }
+      .warning { border: 1px solid #f0d9ad; border-radius: 7px; background: #fff8ec; padding: 10px 12px; }
+      .warning p { margin: 0; font-size: 13px; color: #6b4a00; }
+      .routed-link { display: inline-block; margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; }
+      .routed-link:hover { text-decoration: underline; }
+      .routed-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; text-decoration: underline; }
+
+      @media (max-width: 880px) {
+        .workspace { grid-template-columns: 1fr; }
+        .element { grid-template-columns: 1fr auto; }
+        .element .kind { display: none; }
+      }
+    </style>
+    <script src="../preview/reuse-nav.js" defer></script>
+  </head>
+  <body data-reuse-step="intro-outro-builder">
+    <main>
+      <h1>Intro &amp; outro builder</h1>
+      <p class="lede">
+        Frame each episode with a consistent, branded opening and closing that still adapts to this guest and
+        topic. Editing is episode-first: previews run against your real first and last speaker moments, not
+        detached template slides. Each owned decision opens on the screen that owns it.
+      </p>
+
+      <section class="workspace" aria-label="Intro and outro builder workspace">
+        <div>
+          <div class="panel">
+            <div class="seq-switch" id="seqSwitch" role="group" aria-label="Choose intro or outro"></div>
+            <p class="status-note" id="seqHint"></p>
+            <div class="elements" id="elements"></div>
+            <div class="actions" id="actions"></div>
+          </div>
+        </div>
+
+        <aside class="panel" aria-live="polite" aria-label="Sequence preview and readiness">
+          <h2 id="previewHeading">Preview</h2>
+          <p class="status-note" id="episodeContext"></p>
+          <div id="status" class="status draft">Draft</div>
+          <p class="status-note" id="statusNote"></p>
+          <div class="preview-frame" id="preview"></div>
+          <div class="warnings" id="warnings"></div>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      // The episode the opening/closing are framed against. These are the same Host/Guest
+      // buckets and metadata the ingest and social-context screens assign — so the creator
+      // recognizes their own episode, and previews run against real first/last moments.
+      const episode = {
+        show: "The Long Build",
+        episodeTitle: "Shipping under pressure",
+        host: "Maya",
+        guests: ["Dev", "Priya"],
+        topic: "How small teams ship fast without burning out",
+        sponsorRequired: true,
+        firstMoment: "00:00 — Maya opens cold on the week's theme",
+        lastMoment: "1:11:48 — Dev signs off with the next-episode tease",
+      };
+
+      // Intro/outro element sets from the spec. `episodeSpecific` elements get pulled from
+      // episode metadata when the creator adapts the sequence; structural/brand elements
+      // reuse from the show template.
+      const introElements = [
+        { id: "show-title", label: "Show title", kind: "brand", episodeSpecific: false },
+        { id: "episode-title", label: "Episode title", kind: "metadata", episodeSpecific: true },
+        { id: "speaker-names", label: "Host and guest names", kind: "metadata", episodeSpecific: true },
+        { id: "topic-line", label: "Short topic line", kind: "metadata", episodeSpecific: true },
+        { id: "brand-treatment", label: "Logo / brand treatment", kind: "brand", episodeSpecific: false },
+        { id: "music-cue", label: "Music or sound cue placeholder", kind: "music", episodeSpecific: false },
+        { id: "first-speaker-frame", label: "First speaker frame", kind: "framing", episodeSpecific: true },
+        { id: "sponsor-disclosure", label: "Sponsor disclosure", kind: "sponsor", episodeSpecific: false },
+      ];
+
+      const outroElements = [
+        { id: "closing-title", label: "Closing title", kind: "brand", episodeSpecific: false },
+        { id: "guest-links", label: "Guest links", kind: "metadata", episodeSpecific: true },
+        { id: "subscribe-prompt", label: "Show subscribe prompt", kind: "brand", episodeSpecific: false },
+        { id: "sponsor-ack", label: "Sponsor acknowledgement", kind: "sponsor", episodeSpecific: false },
+        { id: "next-episode-teaser", label: "Next episode teaser", kind: "metadata", episodeSpecific: true },
+        { id: "credits", label: "Credits", kind: "brand", episodeSpecific: false },
+        { id: "export-destination-note", label: "Export destination note", kind: "export", episodeSpecific: true },
+      ];
+
+      // Owned decisions route to the screen that owns them (existing screens only), so the
+      // builder sets intro/outro intent and hands concrete review off — never a second
+      // editor for names, sponsor rules, or export readiness.
+      const surfaces = {
+        context: { file: "social-context-intake.html", label: "social context intake" },
+        export: { file: "export-readiness-review.html", label: "export readiness review" },
+        template: { file: "show-template-adaptation.html", label: "show template adaptation" },
+      };
+
+      function elementsFor(kind) {
+        return kind === "intro" ? introElements : outroElements;
+      }
+
+      // Pure, DOM-free review logic (also exported for tests). `s` is a sequence state:
+      // { adapted, skipped, removed:[ids], namesConfirmed, sponsorConfirmed, musicReviewed, approved }.
+      // Returns the spec's review state plus the warnings that still block export. Skipping a
+      // sequence yields no warnings for THIS sequence, but never clears the other one's.
+      function evaluateSequence(kind, s) {
+        const defs = elementsFor(kind);
+        const removed = s.removed || [];
+        const present = defs.filter((e) => !removed.includes(e.id));
+
+        if (s.skipped) {
+          return { state: "skipped", warnings: [], present };
+        }
+        if (!s.adapted) {
+          return { state: "draft", warnings: [], present };
+        }
+
+        const warnings = [];
+        const nameEl = kind === "intro" ? "speaker-names" : "guest-links";
+        if (present.some((e) => e.id === nameEl) && !s.namesConfirmed) {
+          warnings.push({
+            id: "names",
+            text: kind === "intro"
+              ? "Host and guest names aren't confirmed against social context yet."
+              : "Guest links aren't confirmed against social context yet.",
+            route: surfaces.context.file,
+            routeLabel: surfaces.context.label,
+          });
+        }
+
+        const sponsorEl = kind === "intro" ? "sponsor-disclosure" : "sponsor-ack";
+        if (episode.sponsorRequired) {
+          if (!present.some((e) => e.id === sponsorEl)) {
+            warnings.push({
+              id: "sponsor-missing",
+              text: `This episode needs a sponsor ${kind === "intro" ? "disclosure" : "acknowledgement"}, but it was removed from the ${kind}.`,
+              route: surfaces.export.file,
+              routeLabel: surfaces.export.label,
+            });
+          } else if (!s.sponsorConfirmed) {
+            warnings.push({
+              id: "sponsor",
+              text: "Sponsor disclosure isn't confirmed for the export destination.",
+              route: surfaces.export.file,
+              routeLabel: surfaces.export.label,
+            });
+          }
+        }
+
+        if (kind === "intro" && present.some((e) => e.id === "music-cue") && !s.musicReviewed) {
+          warnings.push({
+            id: "music",
+            text: "Check the intro music cue doesn't overlap the first spoken line before export.",
+            route: surfaces.export.file,
+            routeLabel: surfaces.export.label,
+          });
+        }
+
+        const state = warnings.length ? "needs-review" : s.approved ? "approved" : "adapted";
+        return { state, warnings, present };
+      }
+
+      const STATE_COPY = {
+        draft: { cls: "draft", label: "Draft", note: "Suggested opening/closing from the template. Not counted as complete in export readiness until adapted." },
+        adapted: { cls: "adapted", label: "Adapted for episode", note: "Episode details are pulled in. Approve it to include the sequence in export." },
+        "needs-review": { cls: "review", label: "Needs review", note: "Held in export readiness until naming, sponsor, or music issues are resolved." },
+        approved: { cls: "approved", label: "Approved for export", note: "Included in the exported episode; only intro/outro readiness items are cleared." },
+        skipped: { cls: "skipped", label: "Skipped for episode", note: "Omitted from this export. Unrelated metadata, sponsor, and music warnings are left untouched." },
+      };
+
+      const freshState = () => ({
+        adapted: false, skipped: false, removed: [],
+        namesConfirmed: false, sponsorConfirmed: false, musicReviewed: false, approved: false,
+      });
+
+      const state = { intro: freshState(), outro: freshState() };
+      let current = "intro";
+
+      const seqSwitchEl = document.querySelector("#seqSwitch");
+      const seqHintEl = document.querySelector("#seqHint");
+      const elementsEl = document.querySelector("#elements");
+      const actionsEl = document.querySelector("#actions");
+      const previewHeadingEl = document.querySelector("#previewHeading");
+      const episodeContextEl = document.querySelector("#episodeContext");
+      const statusEl = document.querySelector("#status");
+      const statusNoteEl = document.querySelector("#statusNote");
+      const previewEl = document.querySelector("#preview");
+      const warningsEl = document.querySelector("#warnings");
+
+      function cur() {
+        return state[current];
+      }
+
+      function orderedPresentDefs() {
+        // Elements in their current order, skipping removed ones for the preview/order.
+        const defs = elementsFor(current);
+        const order = cur()._order || defs.map((e) => e.id);
+        return order
+          .map((id) => defs.find((e) => e.id === id))
+          .filter(Boolean);
+      }
+
+      function ensureOrder(kind) {
+        if (!state[kind]._order) {
+          state[kind]._order = elementsFor(kind).map((e) => e.id);
+        }
+        return state[kind]._order;
+      }
+
+      function moveElement(id, delta) {
+        const order = ensureOrder(current);
+        const i = order.indexOf(id);
+        const j = i + delta;
+        if (i < 0 || j < 0 || j >= order.length) return;
+        order.splice(i, 1);
+        order.splice(j, 0, id);
+        cur().approved = false;
+        render();
+      }
+
+      function toggleRemoved(id) {
+        const removed = cur().removed;
+        const i = removed.indexOf(id);
+        if (i >= 0) removed.splice(i, 1);
+        else removed.push(id);
+        cur().approved = false;
+        render();
+      }
+
+      function renderSwitch() {
+        seqSwitchEl.replaceChildren(
+          ...["intro", "outro"].map((kind) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.setAttribute("aria-pressed", String(kind === current));
+            btn.textContent = kind === "intro" ? "Intro" : "Outro";
+            btn.addEventListener("click", () => {
+              current = kind;
+              render();
+            });
+            return btn;
+          }),
+        );
+        seqHintEl.textContent = current === "intro"
+          ? "Defaults favor a short, branded opening. Reorder, remove, or skip the intro for this episode without breaking the saved template."
+          : "Keep, remove, or adapt closing elements for this episode only. Saving back updates the reusable template.";
+      }
+
+      function renderElements() {
+        ensureOrder(current);
+        const defs = orderedPresentDefs();
+        const removed = cur().removed;
+        elementsEl.replaceChildren(
+          ...defs.map((def, index) => {
+            const row = document.createElement("div");
+            const isRemoved = removed.includes(def.id);
+            row.className = isRemoved ? "element removed" : "element";
+
+            const kind = document.createElement("span");
+            kind.className = "kind";
+            kind.textContent = def.kind;
+
+            const body = document.createElement("div");
+            const name = document.createElement("strong");
+            name.textContent = def.label;
+            const tag = document.createElement("span");
+            tag.className = "tag";
+            tag.textContent = def.episodeSpecific ? "adapts per episode" : "from show template";
+            body.append(name, tag);
+
+            const controls = document.createElement("div");
+            controls.className = "reorder";
+            const up = document.createElement("button");
+            up.type = "button";
+            up.className = "icon-btn";
+            up.textContent = "↑";
+            up.setAttribute("aria-label", `Move ${def.label} up`);
+            up.disabled = index === 0;
+            up.addEventListener("click", () => moveElement(def.id, -1));
+            const down = document.createElement("button");
+            down.type = "button";
+            down.className = "icon-btn";
+            down.textContent = "↓";
+            down.setAttribute("aria-label", `Move ${def.label} down`);
+            down.disabled = index === defs.length - 1;
+            down.addEventListener("click", () => moveElement(def.id, 1));
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "icon-btn";
+            remove.textContent = isRemoved ? "Restore" : "Remove";
+            remove.addEventListener("click", () => toggleRemoved(def.id));
+            controls.append(up, down, remove);
+
+            row.append(kind, body, controls);
+            return row;
+          }),
+        );
+      }
+
+      function makeAction(label, opts) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = opts && opts.secondary ? "action secondary" : "action";
+        btn.textContent = label;
+        if (opts && opts.disabled) btn.disabled = true;
+        if (opts && opts.onClick) btn.addEventListener("click", opts.onClick);
+        return btn;
+      }
+
+      function renderActions() {
+        const s = cur();
+        const result = evaluateSequence(current, { ...s, removed: s.removed });
+        const buttons = [];
+
+        buttons.push(makeAction(s.adapted ? "Re-pull episode details" : "Adapt for this episode", {
+          onClick: () => { s.adapted = true; s.approved = false; render(); },
+        }));
+
+        buttons.push(makeAction(s.skipped ? `Use the ${current} for this episode` : `Skip the ${current} for this episode`, {
+          secondary: true,
+          onClick: () => { s.skipped = !s.skipped; s.approved = false; render(); },
+        }));
+
+        if (!s.skipped && s.adapted) {
+          if (!s.namesConfirmed) {
+            buttons.push(makeAction("Confirm names from social context", {
+              secondary: true,
+              onClick: () => { s.namesConfirmed = true; render(); },
+            }));
+          }
+          if (episode.sponsorRequired && !s.sponsorConfirmed) {
+            buttons.push(makeAction("Confirm sponsor disclosure", {
+              secondary: true,
+              onClick: () => { s.sponsorConfirmed = true; render(); },
+            }));
+          }
+          if (current === "intro" && !s.musicReviewed) {
+            buttons.push(makeAction("Mark music cue reviewed", {
+              secondary: true,
+              onClick: () => { s.musicReviewed = true; render(); },
+            }));
+          }
+        }
+
+        const canApprove = !s.skipped && s.adapted && result.warnings.length === 0 && !s.approved;
+        buttons.push(makeAction(s.approved ? "Approved for export" : "Approve for export", {
+          disabled: !canApprove,
+          onClick: () => { s.approved = true; render(); },
+        }));
+
+        buttons.push(makeAction("Save structure to show template", {
+          secondary: true,
+          onClick: () => { render(); },
+        }));
+
+        actionsEl.replaceChildren(...buttons);
+      }
+
+      function renderPreview() {
+        previewHeadingEl.textContent = current === "intro" ? "Opening preview" : "Closing preview";
+        episodeContextEl.textContent =
+          `${episode.show} · "${episode.episodeTitle}" · ${episode.host} with ${episode.guests.join(" & ")}`;
+
+        const frame = document.createElement("div");
+        const moment = document.createElement("p");
+        moment.className = "moment";
+        moment.textContent = `Previewing against ${current === "intro" ? episode.firstMoment : episode.lastMoment}`;
+        const chips = document.createElement("div");
+        chips.className = "chips";
+        const defs = orderedPresentDefs().filter((d) => !cur().removed.includes(d.id));
+        chips.replaceChildren(
+          ...defs.map((d) => {
+            const chip = document.createElement("span");
+            chip.className = d.episodeSpecific ? "chip episode" : "chip";
+            chip.textContent = d.label;
+            return chip;
+          }),
+        );
+        frame.append(moment, chips);
+        previewEl.replaceChildren(frame);
+      }
+
+      function renderStatus() {
+        const s = cur();
+        const result = evaluateSequence(current, { ...s, removed: s.removed });
+        // Invariant: a sequence can't stay "approved" if a warning reappears (e.g. the
+        // creator removes the sponsor element again), so the approval claim stays honest.
+        if (s.approved && result.warnings.length) s.approved = false;
+        const copy = STATE_COPY[result.state];
+        statusEl.className = `status ${copy.cls}`;
+        statusEl.textContent = copy.label;
+        statusNoteEl.textContent = copy.note;
+
+        warningsEl.replaceChildren(
+          ...result.warnings.map((w) => {
+            const box = document.createElement("div");
+            box.className = "warning";
+            const p = document.createElement("p");
+            p.textContent = w.text;
+            box.appendChild(p);
+            if (w.route) {
+              const link = document.createElement("a");
+              link.className = "routed-link";
+              link.href = w.route;
+              link.textContent = `Resolve on ${w.routeLabel} →`;
+              box.appendChild(link);
+            }
+            return box;
+          }),
+        );
+      }
+
+      function render() {
+        renderSwitch();
+        renderElements();
+        renderActions();
+        renderPreview();
+        renderStatus();
+      }
+
+      render();
+
+      if (typeof module !== "undefined" && module.exports) {
+        module.exports = { episode, introElements, outroElements, surfaces, elementsFor, evaluateSequence };
+      }
+    </script>
+  </body>
+</html>

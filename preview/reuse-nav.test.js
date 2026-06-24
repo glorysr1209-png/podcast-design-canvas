@@ -24,6 +24,7 @@ const reuseScreens = [
   "show-template-adaptation.html",
   "start-from-previous-episode.html",
   "episode-chapter-markers.html",
+  "intro-outro-builder.html",
 ];
 
 const reuseFlowMatch = navScript.match(/const REUSE_FLOW = \[([\s\S]*?)\];/);
@@ -130,12 +131,24 @@ assert.ok(
   "middle reuse screen does not reuse the sensitive moment review back link",
 );
 
-const lastNav = renderNavFor("episode-chapter-markers.html", "episode-chapter-markers");
+// Episode chapter markers now leads into the intro & outro builder rather than ending
+// the path, so it shows the new step as its next link.
+const chapterNav = renderNavFor("episode-chapter-markers.html", "episode-chapter-markers");
+assert.ok(
+  linkWithText(chapterNav, "Next: Intro & outro builder"),
+  "chapter markers leads into the intro & outro builder",
+);
+
+const lastNav = renderNavFor("intro-outro-builder.html", "intro-outro-builder");
 const publishHandoff = linkWithText(lastNav, "Continue: Episode watch-through");
 assert.equal(
   publishHandoff.href,
   "episode-watch-through-preview.html",
   "last reuse screen hands off to episode watch-through",
+);
+assert.ok(
+  linkWithText(lastNav, "Previous: Episode chapter markers"),
+  "intro & outro builder follows chapter markers in the reuse path",
 );
 
 const embeddedFirstNav = renderNavFor("show-segment-system.html", "show-segment-system", true);
@@ -169,7 +182,7 @@ assert.equal(
   "embedded reuse nav routes middle next steps through the preview app hash",
 );
 
-const embeddedLastNav = renderNavFor("episode-chapter-markers.html", "episode-chapter-markers", true);
+const embeddedLastNav = renderNavFor("intro-outro-builder.html", "intro-outro-builder", true);
 const embeddedHandoff = linkWithText(embeddedLastNav, "Continue: Episode watch-through");
 assert.equal(
   embeddedHandoff.href,
