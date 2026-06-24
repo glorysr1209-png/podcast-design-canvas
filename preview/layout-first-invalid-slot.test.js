@@ -175,6 +175,9 @@ assert.doesNotMatch(
 ctl.placeVideoFile(host, video("host-cam.mp4"));
 assert.ok(host.classList.contains("filled"), "a valid video fills the slot");
 assert.ok(!host.classList.contains("is-invalid"), "a valid placement clears the invalid flag");
+// Empty the slot again so the following rejection-on-an-empty-slot scenarios start clean.
+ctl.removeVideo(host);
+assert.ok(!host.classList.contains("filled"), "the slot is empty again after removing the video");
 
 // A 0-byte (empty) export flags the slot and names it too.
 const guest = ctl.zonesBySlot.guest;
@@ -253,6 +256,41 @@ assert.ok(asideGuest.classList.contains("is-invalid"), "guest re-flagged before 
 asideCtl.resetVideos();
 assert.ok(!asideGuest.classList.contains("is-invalid"), "resetting the canvas clears the invalid flag");
 
+// Rejecting a file dropped onto an ALREADY-FILLED slot must not corrupt that slot. The valid
+// video is kept, the slot stays "filled" (never "filled" + "is-invalid", which used to leave a
+// red-outlined slot still badged "Ready" with Continue enabled), and the message says it was kept.
+const keep = buildController();
+const keepCtl = keep.controller;
+const keepHost = keepCtl.zonesBySlot.host;
+const keepGuest = keepCtl.zonesBySlot.guest;
+const keepError = keep.elementsById["layout-error"];
+const keepContinue = keep.elementsById["layout-continue"];
+keepCtl.placeVideoFile(keepHost, video("host-cam.mp4"));
+keepCtl.placeVideoFile(keepGuest, video("guest-cam.mp4"));
+assert.ok(!keepContinue.classList.contains("is-disabled"), "both required videos placed enables Continue");
+
+// Drop a non-video onto the filled host (a common "I meant to replace it" gesture; drag/drop
+// bypasses the input accept filter).
+keepCtl.placeVideoFile(keepHost, notVideo("poster.png"));
+assert.ok(keepHost.classList.contains("filled"), "rejecting a file on a filled slot keeps it filled");
+assert.ok(!keepHost.classList.contains("is-invalid"), "a filled slot is never left filled AND invalid");
+assert.equal(keepHost.dataset.fileName, "host-cam.mp4", "the existing video is preserved, not replaced");
+assert.equal(
+  keepCtl.slotIndicators.host.textContent,
+  "Ready",
+  "the kept slot still reads Ready, not a contradictory Invalid file",
+);
+assert.ok(!keepContinue.classList.contains("is-disabled"), "Continue stays enabled — the valid placement is intact");
+assert.match(keepError.textContent, /Kept the current Host/i, "the message explains the current video was kept");
+
+// The same protection applies to a 0-byte export dropped onto a filled slot.
+keepCtl.placeVideoFile(keepHost, emptyVideo("aborted.mp4"));
+assert.ok(
+  keepHost.classList.contains("filled") && !keepHost.classList.contains("is-invalid"),
+  "an empty export on a filled slot also keeps the existing video",
+);
+assert.equal(keepHost.dataset.fileName, "host-cam.mp4", "the empty export does not replace the good take");
+
 assert.match(html, /\.drop-zone\.is-invalid \{/, "an invalid-slot style is defined");
 
-console.log("layout-first invalid-slot: rejected files flag and name the slot; valid placement and reset clear it");
+console.log("layout-first invalid-slot: rejected files flag and name the slot; valid placement and reset clear it; a rejected file never corrupts a filled slot");

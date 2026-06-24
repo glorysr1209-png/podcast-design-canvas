@@ -216,9 +216,9 @@
     // When a slot rejects a file, mark that slot (not just the shared error line) so the
     // creator can see which assignment failed — #1131 asks for invalid slot assignments to
     // be clearly indicated. The flag clears when a valid file lands or the slot is cleared.
-    function flagInvalidSlot(zone, message) {
-      // Only the slot that just rejected a file should be flagged — a prior rejection on
-      // another slot must not keep its outline once the error names a different slot.
+    // Only the slot that just rejected a file should be flagged — a prior rejection on
+    // another slot must not keep its outline once the error names a different slot.
+    function clearOtherInvalidSlots(zone) {
       zones.forEach((candidate) => {
         if (candidate !== zone && candidate.classList) {
           if (candidate.classList.contains("is-invalid")) {
@@ -228,9 +228,29 @@
           candidate.dataset.invalidMessage = "";
         }
       });
+    }
+
+    function flagInvalidSlot(zone, message) {
+      clearOtherInvalidSlots(zone);
       if (zone && zone.classList) zone.classList.add("is-invalid");
       if (zone && zone.dataset) zone.dataset.invalidMessage = message;
       setError(message);
+    }
+
+    // A slot can reject a dropped/picked file (wrong type or empty export). When the slot is
+    // empty we flag it invalid so the creator sees which assignment failed (#1131). But when the
+    // slot ALREADY holds a valid video, the rejected file must NOT corrupt that placement: keep
+    // the existing recording and leave the slot "filled" rather than marking it "is-invalid" too.
+    // Combining "filled" + "is-invalid" left a red-outlined slot still badged "Ready" with the
+    // Continue gate open — a self-contradictory state. Explain that the current video was kept.
+    function rejectFile(zone, message) {
+      if (zone && zone.classList && zone.classList.contains("filled")) {
+        clearOtherInvalidSlots(zone);
+        setError("Kept the current " + slotName(zone) + " video — the new file isn't a usable MP4, MOV, or WebM.");
+      } else {
+        flagInvalidSlot(zone, message);
+      }
+      updateSlotStatus();
     }
 
     function firstInvalidZone() {
@@ -562,16 +582,14 @@
       }
 
       if (!isVideoFile(file)) {
-        flagInvalidSlot(zone, "The " + slotName(zone) + " slot accepts only MP4, MOV, or WebM video.");
-        updateSlotStatus();
+        rejectFile(zone, "The " + slotName(zone) + " slot accepts only MP4, MOV, or WebM video.");
         return;
       }
 
       // A 0-byte file is a failed or aborted export, not a usable recording. Reject it so
       // it never fills a slot or counts toward the Continue gate.
       if (isEmptyExport(file)) {
-        flagInvalidSlot(zone, "The " + slotName(zone) + " video file is empty. Re-export it and place the finished file.");
-        updateSlotStatus();
+        rejectFile(zone, "The " + slotName(zone) + " video file is empty. Re-export it and place the finished file.");
         return;
       }
 
