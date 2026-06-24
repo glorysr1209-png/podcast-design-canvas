@@ -230,10 +230,15 @@
         speakerRow.className = "speaker-row" + (layout.rowClass ? " " + layout.rowClass : "");
       }
 
+      // Keep videos already placed in slots that stay visible, so switching layout to add
+      // or drop a speaker doesn't discard the work a creator has already done. Only slots
+      // that leave the new layout are cleared.
       zones.forEach((zone) => {
         const isVisible = visible.has(zone.dataset.slot);
         zone.classList.toggle("is-hidden", !isVisible);
-        clearZone(zone);
+        if (!isVisible) {
+          clearZone(zone);
+        }
       });
 
       layoutButtons.forEach((button) => {

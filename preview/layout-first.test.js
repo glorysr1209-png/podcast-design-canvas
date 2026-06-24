@@ -286,4 +286,48 @@ elementsById["layout-reset"].listeners.click();
 assert.equal(controller.filledRequiredSlots().length, 0, "reset clears filled required slots");
 assert.ok(revokedUrls.length > 0 && createdUrls.length > 0, "reset revokes created object URLs");
 
-console.log("layout-first landing: required speaker readiness, optional b-roll, and handoff behavior verified");
+// Switching layout preserves videos placed in slots that stay visible (#1026), and only
+// clears slots that leave the new layout. Uses a fresh controller to isolate state.
+const preserveZones = [
+  makeZone("host"),
+  makeZone("guest"),
+  makeZone("guest-b", "drop-zone is-hidden"),
+  makeZone("broll"),
+];
+const preserveButtons = [
+  makeLayoutButton("interview", "Using interview"),
+  makeLayoutButton("solo", "Use solo"),
+  makeLayoutButton("panel", "Use panel"),
+];
+const preserveById = {
+  "layout-scene-label": new Element("span"),
+  "layout-runtime-label": new Element("span"),
+  "speaker-row": new Element("div", { className: "speaker-row" }),
+  "layout-slot-status": new Element("p"),
+  "layout-reset": new Element("button"),
+  "layout-continue": new Element("a", { className: "continue-btn is-disabled" }),
+  "layout-error-card": new Element("div", { hidden: true }),
+  "layout-error": new Element("p"),
+};
+const preserveDoc = {
+  createElement(tagName) { return new Element(tagName); },
+  getElementById(id) { return preserveById[id] || null; },
+  querySelectorAll(selector) {
+    if (selector === "[data-layout]") return preserveButtons;
+    if (selector === ".drop-zone[data-slot]") return preserveZones;
+    return [];
+  },
+};
+const preserve = createLayoutFirstController(preserveDoc, { URL: urlApi });
+preserve.placeVideoFile(preserve.zonesBySlot.host, video("p-host.mp4"));
+preserve.placeVideoFile(preserve.zonesBySlot.guest, video("p-guest.mp4"));
+preserve.applyLayout("panel");
+assert.equal(preserve.zonesBySlot.host.classList.contains("filled"), true, "switching interview->panel keeps the placed host video");
+assert.equal(preserve.zonesBySlot.guest.classList.contains("filled"), true, "switching interview->panel keeps the placed guest video");
+assert.equal(preserve.zonesBySlot["guest-b"].classList.contains("filled"), false, "the newly revealed panel slot starts empty");
+preserve.applyLayout("solo");
+assert.equal(preserve.zonesBySlot.host.classList.contains("filled"), true, "switching to solo keeps the still-visible host video");
+assert.equal(preserve.zonesBySlot.guest.classList.contains("filled"), false, "a slot that leaves the layout is cleared");
+assert.ok(revokedUrls.includes("blob:p-guest.mp4"), "leaving a slot revokes its object URL");
+
+console.log("layout-first landing: required speaker readiness, optional b-roll, handoff, and layout-switch preservation verified");
