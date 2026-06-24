@@ -96,6 +96,18 @@ assert.equal(
   "invalid query slots are rejected instead of falling back to stale stored state",
 );
 
+const reorderedPlacement = handoff.stateFromZones("interview", [
+  zone("guest", "guest-cam.mp4"),
+  zone("host", "host-cam.mp4"),
+]);
+handoff.save(storage, reorderedPlacement);
+assert.equal(
+  handoff.load(storage, "?path=episode&layout=interview&slots=host,guest").slots.find((slot) => slot.slot === "host").name,
+  "host-cam.mp4",
+  "stored placement is restored even when the URL lists the same slots in a different order",
+);
+handoff.clear(storage);
+
 const panelTracks = handoff.tracksFromState(
   handoff.stateFromSlots("panel", [{ slot: "host" }, { slot: "guest" }, { slot: "guest-b" }]),
   [],
