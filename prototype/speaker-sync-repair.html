@@ -133,8 +133,115 @@
         margin-bottom: 4px;
       }
 
-      .moment span {
+      .moment .moment-note {
         color: var(--muted);
+      }
+
+      .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .preview-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 12px;
+      }
+
+      .preview-card strong {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      .preview-card .preview-note {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 8px;
+      }
+
+      .alignment {
+        display: grid;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 6px;
+        background: #eef2f0;
+      }
+
+      .lane {
+        display: grid;
+        grid-template-columns: 54px 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .lane-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .lane-track {
+        position: relative;
+        height: 14px;
+        border-radius: 4px;
+        background: #dde4e1;
+      }
+
+      .lane-track .seg {
+        position: absolute;
+        top: 1px;
+        height: 5px;
+        border-radius: 3px;
+      }
+
+      .lane-track .seg.audio {
+        background: #8aa59c;
+      }
+
+      .lane-track .seg.video {
+        top: 8px;
+        background: #2a8476;
+      }
+
+      .lane-track.repaired .seg.video {
+        background: #3aa895;
+      }
+
+      .effect-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .effect-tags .effect-tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 0 9px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #075246;
+        background: #dff5ef;
+      }
+
+      .compare-wrap {
+        display: grid;
+        gap: 8px;
+      }
+
+      .compare-wrap h3 {
+        margin: 0;
+        font-size: 14px;
+      }
+
+      @media (max-width: 640px) {
+        .compare { grid-template-columns: 1fr; }
       }
 
       .actions {
@@ -285,6 +392,58 @@
         attribution: "Open attribution review",
       };
 
+      const repairEffects = {
+        "align-host": "Guest track lines up with host at this moment",
+        "trim-silence": "Leading silence trimmed from the late video start",
+        "add-gap": "Brief visible gap keeps audio and video honest",
+        replace: "Replacement take stays in sync from this moment",
+        "audio-only": "Guest stays in the episode without video here",
+      };
+
+      const syncProfiles = {
+        "video-late": {
+          before: { guestAudio: 0, guestVideo: 24 },
+          repairs: {
+            "align-host": { guestAudio: 0, guestVideo: 0 },
+            "trim-silence": { guestAudio: 0, guestVideo: 12 },
+          },
+        },
+        "audio-early": {
+          before: { guestAudio: 18, guestVideo: 0 },
+          repairs: {
+            "align-host": { guestAudio: 0, guestVideo: 0 },
+            "add-gap": { guestAudio: 14, guestVideo: 0 },
+          },
+        },
+        drift: {
+          before: { guestAudio: 0, guestVideo: 10, guestTail: 18 },
+          repairs: {
+            "align-host": { guestAudio: 0, guestVideo: 0 },
+            replace: { guestAudio: 0, guestVideo: 0, fresh: true },
+          },
+        },
+        "ends-early": {
+          before: { guestAudio: 0, guestVideo: 0, guestWidth: 48 },
+          repairs: {
+            replace: { guestAudio: 0, guestVideo: 0, guestWidth: 72 },
+            "audio-only": { guestAudio: 0, guestVideo: null, guestWidth: 72 },
+          },
+        },
+        duplicate: {
+          before: { guestAudio: 0, guestVideo: 0, duplicate: true },
+          repairs: {
+            "align-host": { guestAudio: 0, guestVideo: 0 },
+            replace: { guestAudio: 0, guestVideo: 0, fresh: true },
+          },
+        },
+        attribution: {
+          before: { guestAudio: 0, guestVideo: 8, wrongCaption: true },
+          repairs: {
+            "align-host": { guestAudio: 0, guestVideo: 0 },
+          },
+        },
+      };
+
       const sampleTracks = [
         { id: "host", name: "Host — Dana Brooks", issue: "none", proposedRepair: "", resolution: "accepted" },
         { id: "guest", name: "Guest 1 — Marcus Lee", issue: "video-late", proposedRepair: "align-host", resolution: null },
@@ -410,6 +569,7 @@
         const momentTitle = document.createElement("strong");
         momentTitle.textContent = `Preview: ${issue.moment}`;
         const momentCopy = document.createElement("span");
+        momentCopy.className = "moment-note";
         momentCopy.textContent = issue.description(track.name);
         moment.append(momentTitle, momentCopy);
 
@@ -444,6 +604,8 @@
           }
           repairLabel.appendChild(repairSelect);
           article.appendChild(repairLabel);
+
+          article.appendChild(renderCompare(track));
 
           const actions = document.createElement("div");
           actions.className = "actions";
@@ -512,6 +674,138 @@
         }
 
         render();
+      }
+
+      function renderCompare(track) {
+        const wrap = document.createElement("div");
+        wrap.className = "compare-wrap";
+        const heading = document.createElement("h3");
+        heading.textContent = "Compare on this moment";
+        const compare = document.createElement("div");
+        compare.className = "compare";
+
+        const profile = syncProfiles[track.issue];
+        const before = profile?.before ?? { guestAudio: 0, guestVideo: 0 };
+        const after = profile?.repairs?.[track.proposedRepair] ?? before;
+        const effect = repairEffects[track.proposedRepair];
+        const issue = issues[track.issue];
+
+        compare.append(
+          renderPreviewCard("Before repair", before, false, issue.description(track.name)),
+          renderPreviewCard(
+            track.resolution === "repaired" ? "Repair confirmed" : "With repair",
+            after,
+            true,
+            track.proposedRepair
+              ? `Preview after ${repairs[track.proposedRepair].toLowerCase()} at ${issue.moment.toLowerCase()}.`
+              : "Choose a repair to preview the difference.",
+            effect ? [effect] : [],
+          ),
+        );
+
+        wrap.append(heading, compare);
+        return wrap;
+      }
+
+      function renderPreviewCard(title, layout, repaired, note, effects = []) {
+        const card = document.createElement("article");
+        card.className = "preview-card";
+        const cardTitle = document.createElement("strong");
+        cardTitle.textContent = title;
+        card.append(cardTitle, renderAlignment(layout, repaired));
+
+        const copy = document.createElement("p");
+        copy.className = "preview-note";
+        copy.textContent = note;
+        card.appendChild(copy);
+
+        if (effects.length) {
+          const tags = document.createElement("div");
+          tags.className = "effect-tags";
+          tags.setAttribute("aria-label", "Active repair effects");
+          for (const effect of effects) {
+            const tag = document.createElement("span");
+            tag.className = "effect-tag";
+            tag.textContent = effect;
+            tags.appendChild(tag);
+          }
+          card.appendChild(tags);
+        }
+
+        return card;
+      }
+
+      function renderAlignment(layout, repaired) {
+        const alignment = document.createElement("div");
+        alignment.className = "alignment";
+        alignment.append(
+          renderLane("Host", { guestAudio: 0, guestVideo: 0, guestWidth: 72 }, repaired),
+          renderLane("Guest", layout, repaired),
+        );
+
+        if (layout.wrongCaption) {
+          const caption = document.createElement("p");
+          caption.className = "preview-note";
+          caption.textContent = "Caption names the wrong speaker here.";
+          alignment.appendChild(caption);
+        }
+
+        if (layout.fresh && repaired) {
+          const caption = document.createElement("p");
+          caption.className = "preview-note";
+          caption.textContent = "Fresh take replaces the drifting segment.";
+          alignment.appendChild(caption);
+        }
+
+        return alignment;
+      }
+
+      function renderLane(label, layout, repaired) {
+        const lane = document.createElement("div");
+        lane.className = "lane";
+        const laneLabel = document.createElement("span");
+        laneLabel.className = "lane-label";
+        laneLabel.textContent = label;
+
+        const track = document.createElement("div");
+        track.className = `lane-track ${repaired ? "repaired" : ""}`;
+
+        const width = layout.guestWidth ?? 72;
+        const audio = document.createElement("span");
+        audio.className = "seg audio";
+        audio.style.left = `${layout.guestAudio ?? 0}%`;
+        audio.style.width = `${width}%`;
+
+        track.appendChild(audio);
+
+        if (layout.guestVideo !== null && layout.guestVideo !== undefined) {
+          const video = document.createElement("span");
+          video.className = "seg video";
+          video.style.left = `${layout.guestVideo ?? 0}%`;
+          video.style.width = `${width}%`;
+          track.appendChild(video);
+        }
+
+        if (layout.guestTail) {
+          const tail = document.createElement("span");
+          tail.className = "seg video";
+          tail.style.left = `${layout.guestTail}%`;
+          tail.style.width = `${Math.max(24, width - layout.guestTail)}%`;
+          tail.style.opacity = "0.55";
+          track.appendChild(tail);
+        }
+
+        if (layout.duplicate) {
+          const echo = document.createElement("span");
+          echo.className = "seg audio";
+          echo.style.left = "8%";
+          echo.style.width = "36%";
+          echo.style.opacity = "0.45";
+          track.appendChild(echo);
+        }
+
+        lane.append(laneLabel, track);
+        return lane;
       }
 
       function renderIssue(issue) {
