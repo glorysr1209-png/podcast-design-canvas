@@ -61,6 +61,13 @@
       .package-item { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 12px; align-items: center; }
       .warning { border-left: 4px solid var(--review); border-radius: 6px; background: #fff; padding: 10px 12px; }
       .warning.blocked { border-left-color: var(--blocked); }
+      .warning .fix-link {
+        display: inline-block; margin-top: 8px; color: var(--accent);
+        font-weight: 700; font-size: 13px; text-decoration: none;
+      }
+      .warning .fix-link:hover, .warning .fix-link:focus-visible {
+        text-decoration: underline; outline: 2px solid var(--accent); outline-offset: 2px;
+      }
       .handoff-note {
         margin-top: 12px; border: 1px solid #c7d7d1; border-radius: 7px; background: #fff;
         padding: 11px 12px; color: var(--muted);
@@ -191,7 +198,7 @@
             ["Ignored warnings report", "Caption omission consequence would stay visible if exported now", "review"],
           ],
           warnings: [
-            ["blocked", "Caption file still blocked", "Return to speaker attribution review before sharing this client review copy with captions."],
+            ["blocked", "Caption file still blocked", "Return to speaker attribution review before sharing this client review copy with captions.", "speaker-attribution-review.html", "speaker attribution review"],
             ["review", "If exported around the issue", "The handoff should keep the omitted-caption consequence visible instead of treating it as resolved."],
           ],
         },
@@ -360,10 +367,19 @@
         });
 
         warningsEl.replaceChildren();
-        destination.warnings.forEach(([tone, title, detail]) => {
+        destination.warnings.forEach(([tone, title, detail, fixScreen, fixLabel]) => {
           const item = document.createElement("div");
           item.className = `warning${tone === "blocked" ? " blocked" : ""}`;
           appendTextBlock(item, title, detail);
+          // A blocking warning points back to the screen that owns the fix (per this
+          // screen's own "point back to the owning surface" rule), rendered as a link.
+          if (fixScreen) {
+            const openLink = document.createElement("a");
+            openLink.className = "fix-link";
+            openLink.href = fixScreen;
+            openLink.textContent = `Open ${fixLabel || "the owning screen"} →`;
+            item.appendChild(openLink);
+          }
           warningsEl.appendChild(item);
         });
 
