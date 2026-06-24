@@ -12,6 +12,7 @@ const REUSE_FLOW = [
   { id: "episode-chapter-markers", file: "episode-chapter-markers.html", label: "Episode chapter markers" },
   { id: "intro-outro-builder", file: "intro-outro-builder.html", label: "Intro & outro builder" },
   { id: "episode-runtime-shaping", file: "episode-runtime-shaping.html", label: "Episode runtime shaping" },
+  { id: "episode-asset-library", file: "episode-asset-library.html", label: "Episode asset library" },
 ];
 
 const REUSE_ENTRY = { file: "sensitive-moment-review.html", label: "Sensitive moment review" };

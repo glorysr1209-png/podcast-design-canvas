@@ -26,6 +26,7 @@ const reuseScreens = [
   "episode-chapter-markers.html",
   "intro-outro-builder.html",
   "episode-runtime-shaping.html",
+  "episode-asset-library.html",
 ];
 
 const reuseFlowMatch = navScript.match(/const REUSE_FLOW = \[([\s\S]*?)\];/);
@@ -140,7 +141,19 @@ assert.equal(
   "chapter markers advances to intro and outro builder",
 );
 
-const lastNav = renderNavFor("episode-runtime-shaping.html", "episode-runtime-shaping");
+const runtimeNav = renderNavFor("episode-runtime-shaping.html", "episode-runtime-shaping");
+assert.equal(
+  linkWithText(runtimeNav, "Next: Episode asset library").href,
+  "episode-asset-library.html",
+  "runtime shaping advances to the episode asset library",
+);
+
+const lastNav = renderNavFor("episode-asset-library.html", "episode-asset-library");
+assert.equal(
+  linkWithText(lastNav, "Previous: Episode runtime shaping").href,
+  "episode-runtime-shaping.html",
+  "asset library renders runtime shaping as its previous step",
+);
 const publishHandoff = linkWithText(lastNav, "Continue: Episode watch-through");
 assert.equal(
   publishHandoff.href,
@@ -186,7 +199,7 @@ assert.equal(
   "embedded reuse nav routes the intro and outro step through the preview app hash",
 );
 
-const embeddedLastNav = renderNavFor("episode-runtime-shaping.html", "episode-runtime-shaping", true);
+const embeddedLastNav = renderNavFor("episode-asset-library.html", "episode-asset-library", true);
 const embeddedHandoff = linkWithText(embeddedLastNav, "Continue: Episode watch-through");
 assert.equal(
   embeddedHandoff.href,
