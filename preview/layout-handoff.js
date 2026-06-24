@@ -213,8 +213,12 @@
       if (storedState && stored.optionalBroll) {
         storedState.optionalBroll = clone(stored.optionalBroll);
       }
-      const storedSlots = storedState ? storedState.slots.map((slot) => slot.slot).join(",") : "";
-      const querySlots = queryState.slots.map((slot) => slot.slot).join(",");
+      // Compare the slot sets, not their order. The stored state preserves the order the creator
+      // placed videos, while the URL slots come back in layout-definition order (via
+      // completeSlotQueryForLayout / routeSearchFor). Comparing ordered joins would miss a match
+      // for an out-of-order placement and drop the carried file names, so sort before comparing.
+      const storedSlots = storedState ? storedState.slots.map((slot) => slot.slot).sort().join(",") : "";
+      const querySlots = queryState.slots.map((slot) => slot.slot).sort().join(",");
       const brollMatches = Boolean(storedState && storedState.optionalBroll) === (params.get("broll") === "placed");
       if (
         storedState
