@@ -117,8 +117,18 @@
         gap: 8px;
       }
 
+      .rollup-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
       .track.jump-highlight {
         box-shadow: 0 0 0 2px #136f63;
+      }
+
+      .track.filtered-out {
+        display: none;
       }
 
       .track {
@@ -558,9 +568,11 @@
       const sampleTracks = [
         { id: "host", name: "Host — Dana Brooks", issue: "none", proposedRepair: "", resolution: "accepted", previewMoment: "episode-start" },
         { id: "guest-1", name: "Guest 1 — Marcus Lee", issue: "video-late", proposedRepair: "align-host", resolution: null, previewMoment: "episode-start" },
+        { id: "guest-2", name: "Guest 2 — Priya Shah", issue: "none", proposedRepair: "", resolution: "accepted", previewMoment: "midpoint" },
       ];
 
       let tracks = structuredClone(sampleTracks);
+      let showReviewOnly = false;
 
       const tracksElement = document.querySelector("#tracks");
       const rollupElement = document.querySelector("#trackRollup");
@@ -569,8 +581,13 @@
 
       document.querySelector("#reset").addEventListener("click", () => {
         tracks = structuredClone(sampleTracks);
+        showReviewOnly = false;
         render();
       });
+
+      function needsReviewState(state) {
+        return ["flagged", "needs attribution review", "blocked for export"].includes(state);
+      }
 
       function repairChoices(issueKey) {
         return (issues[issueKey].repairs || []).filter((key) => !["intentional", "ignore", "attribution"].includes(key));
@@ -655,9 +672,20 @@
 
       function render() {
         const evaluation = evaluate(tracks);
+        const reviewCount = evaluation.results.filter((result) => needsReviewState(result.state)).length;
 
-        tracksElement.replaceChildren(...tracks.map((track, index) => renderTrack(track, index, evaluation.results[index])));
-        renderRollup(evaluation);
+        if (showReviewOnly && reviewCount === 0) {
+          showReviewOnly = false;
+        }
+
+        tracksElement.replaceChildren(
+          ...tracks.map((track, index) => {
+            const result = evaluation.results[index];
+            const filteredOut = showReviewOnly && !needsReviewState(result.state);
+            return renderTrack(track, index, result, filteredOut);
+          }),
+        );
+        renderRollup(evaluation, reviewCount);
 
         statusElement.className = `status ${evaluation.overall}`;
         statusElement.textContent = evaluation.overall === "ready"
@@ -675,9 +703,7 @@
       }
 
       function buildRollup(evaluation) {
-        const needsWork = evaluation.results.filter((result) =>
-          ["flagged", "needs attribution review", "blocked for export"].includes(result.state),
-        );
+        const needsWork = evaluation.results.filter((result) => needsReviewState(result.state));
         const clearCount = evaluation.results.length - needsWork.length;
 
         if (evaluation.overall === "blocked") {
@@ -706,7 +732,7 @@
         };
       }
 
-      function renderRollup(evaluation) {
+      function renderRollup(evaluation, reviewCount) {
         const rollup = buildRollup(evaluation);
         rollupElement.className = `track-rollup ${rollup.statusClass === "all-clear" ? "all-clear" : ""}`;
         rollupElement.replaceChildren();
@@ -721,6 +747,23 @@
         detail.textContent = rollup.detail;
         head.append(status, detail);
         rollupElement.appendChild(head);
+
+        if (reviewCount > 0) {
+          const toolbar = document.createElement("div");
+          toolbar.className = "rollup-toolbar";
+          const filterButton = document.createElement("button");
+          filterButton.type = "button";
+          filterButton.className = "secondary";
+          filterButton.textContent = showReviewOnly
+            ? `Show all ${evaluation.results.length} tracks`
+            : `Show tracks that need review (${reviewCount})`;
+          filterButton.addEventListener("click", () => {
+            showReviewOnly = !showReviewOnly;
+            render();
+          });
+          toolbar.appendChild(filterButton);
+          rollupElement.appendChild(toolbar);
+        }
 
         if (rollup.needsWork.length) {
           const links = document.createElement("div");
@@ -738,6 +781,8 @@
       }
 
       function focusTrack(trackId) {
+        showReviewOnly = false;
+        render();
         const target = document.querySelector(`#track-${trackId}`);
         if (!target) return;
         target.classList.add("jump-highlight");
@@ -745,13 +790,13 @@
         window.setTimeout(() => target.classList.remove("jump-highlight"), 1600);
       }
 
-      function renderTrack(track, index, result) {
+      function renderTrack(track, index, result, filteredOut = false) {
         const issue = issues[track.issue];
         if (!track.previewMoment) {
           track.previewMoment = issueDefaultPreviewMoment[track.issue] || "episode-start";
         }
         const article = document.createElement("article");
-        article.className = "track";
+        article.className = filteredOut ? "track filtered-out" : "track";
         article.id = `track-${track.id}`;
 
         const head = document.createElement("div");
