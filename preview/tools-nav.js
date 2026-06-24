@@ -28,6 +28,9 @@ function renderToolsNav() {
   if (document.querySelector(".episode-flow-nav")) {
     return;
   }
+  if (document.querySelector(".tools-nav")) {
+    return;
+  }
 
   if (!document.getElementById("tools-nav-styles")) {
     const style = document.createElement("style");
