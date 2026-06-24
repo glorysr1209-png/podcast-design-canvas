@@ -15,7 +15,7 @@ const STYLE_FLOW = [
 ];
 
 const STYLE_ENTRY = { file: "speaker-eye-line-coherence.html", label: "Speaker eye-line coherence" };
-const STYLE_HANDOFF = { file: "contextual-broll-moments.html", label: "Contextual b-roll moments" };
+const STYLE_HANDOFF = { file: "contextual-broll-moments.html?from=style", label: "Contextual b-roll moments" };
 
 const PREVIEW_APP_STYLE_TARGETS = new Set([
   screenIdFromFile(STYLE_ENTRY.file),
@@ -55,7 +55,18 @@ function isEmbeddedInPreviewApp() {
 }
 
 function previewAppHref(file) {
-  return `../preview/app.html#${screenIdFromFile(file)}`;
+  return `../preview/app.html#${screenIdFromFile(file)}${routeSearchFromFile(file)}`;
+}
+
+function routeSearchFromFile(file) {
+  const query = ((file || "").split("#")[0].split("?")[1] || "");
+  if (query === "from=style") {
+    return "?from=style";
+  }
+  if (query === "from=cleanup") {
+    return "?from=cleanup";
+  }
+  return "";
 }
 
 function setTopTargetWhenEmbedded(link) {

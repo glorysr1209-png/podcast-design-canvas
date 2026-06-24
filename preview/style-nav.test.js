@@ -121,7 +121,7 @@ assert.ok(
   "last visual direction screen hands off to the contextual visuals path",
 );
 assert.ok(
-  lastNav.nodes.some((node) => node.href === "contextual-broll-moments.html"),
+  lastNav.nodes.some((node) => node.href === "contextual-broll-moments.html?from=style"),
   "last visual direction screen links to contextual b-roll moments",
 );
 
@@ -172,7 +172,7 @@ const embeddedLastNav = renderNavFor("canvas-layer-controls.html", "canvas-layer
 const embeddedHandoff = linkWithText(embeddedLastNav.nodes, "Continue: Contextual b-roll moments");
 assert.equal(
   embeddedHandoff.href,
-  "../preview/app.html#contextual-broll-moments",
+  "../preview/app.html#contextual-broll-moments?from=style",
   "embedded style nav routes the contextual visuals handoff through the preview app hash",
 );
 assert.equal(embeddedHandoff.target, "_top", "embedded style handoff targets the parent app");

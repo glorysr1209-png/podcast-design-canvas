@@ -17,6 +17,7 @@ assert.ok(navScript.includes("episode-flow.html"), "visuals nav links to the gui
 assert.ok(navScript.includes("app.html"), "visuals nav links to the preview app");
 assert.ok(navScript.includes("show-segment-system.html"), "visuals nav hands off to the reuse path");
 assert.ok(navScript.includes("on-screen-correction-note.html"), "visuals nav links back to the cleanup path");
+assert.ok(navScript.includes("canvas-layer-controls.html"), "visuals nav can link back to the visual direction path");
 assert.ok(navScript.includes('document.querySelector(".visuals-nav")'), "visuals nav guards against double render");
 assert.ok(!/innerHTML/.test(navScript), "visuals nav builds the DOM without innerHTML");
 
@@ -68,14 +69,14 @@ function flatten(node) {
   return [node, ...node.children.flatMap(flatten)];
 }
 
-function makeWindow(fileName, embedded = false) {
-  const window = { location: { pathname: `/prototype/${fileName}` } };
+function makeWindow(fileName, embedded = false, search = "") {
+  const window = { location: { pathname: `/prototype/${fileName}`, search } };
   window.self = window;
   window.top = embedded ? { location: { pathname: "/preview/app.html" } } : window;
   return window;
 }
 
-function renderNavFor(fileName, visualsStep, embedded = false) {
+function renderNavFor(fileName, visualsStep, embedded = false, search = "") {
   const head = createElement("head");
   const body = createElement("body");
   if (visualsStep) {
@@ -98,7 +99,7 @@ function renderNavFor(fileName, visualsStep, embedded = false) {
 
   vm.runInNewContext(navScript, {
     document,
-    window: makeWindow(fileName, embedded),
+    window: makeWindow(fileName, embedded, search),
   });
 
   return flatten(body);
@@ -116,6 +117,37 @@ assert.equal(
   cleanupBackLink.href,
   "on-screen-correction-note.html",
   "first visuals screen links back to cleanup",
+);
+const defaultNextLink = linkWithText(firstNav, "Next: Contextual title cards");
+assert.equal(
+  defaultNextLink.href,
+  "contextual-title-cards.html?from=cleanup",
+  "default visuals entry carries cleanup context forward",
+);
+
+const styleEntryNav = renderNavFor("contextual-broll-moments.html", "contextual-broll-moments", false, "?from=style");
+const styleBackLink = linkWithText(styleEntryNav, "Previous: Canvas layer controls");
+assert.equal(
+  styleBackLink.href,
+  "canvas-layer-controls.html",
+  "style-entered visuals link back to visual direction",
+);
+assert.equal(
+  linkWithText(styleEntryNav, "Next: Contextual title cards").href,
+  "contextual-title-cards.html?from=style",
+  "style-entered visuals carry style context forward",
+);
+
+const cleanupMiddleNav = renderNavFor("contextual-title-cards.html", "contextual-title-cards", false, "?from=cleanup");
+assert.equal(
+  linkWithText(cleanupMiddleNav, "Previous: Contextual b-roll moments").href,
+  "contextual-broll-moments.html?from=cleanup",
+  "cleanup-entered visuals carry cleanup context backward inside the visuals path",
+);
+assert.equal(
+  linkWithText(cleanupMiddleNav, "Next: Sensitive moment review").href,
+  "sensitive-moment-review.html?from=cleanup",
+  "cleanup-entered visuals carry cleanup context forward inside the visuals path",
 );
 
 const lastNav = renderNavFor("sensitive-moment-review.html", "sensitive-moment-review");
@@ -140,20 +172,34 @@ assert.equal(embeddedCleanupBack.target, "_top", "embedded cleanup back-link tar
 const embeddedNext = linkWithText(embeddedFirstNav, "Next: Contextual title cards");
 assert.equal(
   embeddedNext.href,
-  "../preview/app.html#contextual-title-cards",
+  "../preview/app.html#contextual-title-cards?from=cleanup",
   "embedded visuals nav routes next visuals steps through the preview app hash",
 );
 assert.equal(embeddedNext.target, "_top", "embedded visuals next link targets the parent app");
 
-const embeddedMiddleNav = renderNavFor("contextual-title-cards.html", "contextual-title-cards", true);
+const embeddedStyleEntryNav = renderNavFor("contextual-broll-moments.html", "contextual-broll-moments", true, "?from=style");
+const embeddedStyleBack = linkWithText(embeddedStyleEntryNav, "Previous: Canvas layer controls");
+assert.equal(
+  embeddedStyleBack.href,
+  "../preview/app.html#canvas-layer-controls",
+  "embedded style-entered visuals route the back-link through the preview app hash",
+);
+const embeddedStyleNext = linkWithText(embeddedStyleEntryNav, "Next: Contextual title cards");
+assert.equal(
+  embeddedStyleNext.href,
+  "../preview/app.html#contextual-title-cards?from=style",
+  "embedded style-entered visuals preserve style context on next",
+);
+
+const embeddedMiddleNav = renderNavFor("contextual-title-cards.html", "contextual-title-cards", true, "?from=cleanup");
 assert.equal(
   linkWithText(embeddedMiddleNav, "Previous: Contextual b-roll moments").href,
-  "../preview/app.html#contextual-broll-moments",
+  "../preview/app.html#contextual-broll-moments?from=cleanup",
   "embedded visuals nav routes previous visuals steps through the preview app hash",
 );
 assert.equal(
   linkWithText(embeddedMiddleNav, "Next: Sensitive moment review").href,
-  "../preview/app.html#sensitive-moment-review",
+  "../preview/app.html#sensitive-moment-review?from=cleanup",
   "embedded visuals nav routes middle next steps through the preview app hash",
 );
 

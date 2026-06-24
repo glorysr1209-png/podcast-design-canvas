@@ -26,7 +26,7 @@ const expectedHandoffs = [
   },
   {
     script: "style-nav.js",
-    href: 'STYLE_HANDOFF = { file: "contextual-broll-moments.html"',
+    href: 'STYLE_HANDOFF = { file: "contextual-broll-moments.html?from=style"',
     text: 'label: "Contextual b-roll moments"',
     note: "visual direction hands off to contextual visuals",
   },
@@ -38,7 +38,7 @@ const expectedHandoffs = [
   },
   {
     script: "cleanup-nav.js",
-    href: 'start.href = "contextual-broll-moments.html"',
+    href: 'start.href = "contextual-broll-moments.html?from=cleanup"',
     text: "Continue: Contextual b-roll moments",
     note: "cleanup helpers hand off to contextual visuals",
   },
@@ -77,8 +77,8 @@ const expectedEntryBacklinks = [
   },
   {
     script: "visuals-nav.js",
-    href: 'cleanup.href = "on-screen-correction-note.html"',
-    text: "Previous: On-screen correction note",
+    href: 'cleanup: { href: "on-screen-correction-note.html"',
+    text: 'label: "On-screen correction note"',
     note: "contextual visuals link back to cleanup helpers",
   },
 ];

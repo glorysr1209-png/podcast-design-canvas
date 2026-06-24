@@ -53,7 +53,18 @@ function isEmbeddedInPreviewApp() {
 }
 
 function previewAppHref(file) {
-  return `../preview/app.html#${screenIdFromFile(file)}`;
+  return `../preview/app.html#${screenIdFromFile(file)}${routeSearchFromFile(file)}`;
+}
+
+function routeSearchFromFile(file) {
+  const query = ((file || "").split("#")[0].split("?")[1] || "");
+  if (query === "from=style") {
+    return "?from=style";
+  }
+  if (query === "from=cleanup") {
+    return "?from=cleanup";
+  }
+  return "";
 }
 
 function setTopTargetWhenEmbedded(link) {
@@ -184,8 +195,8 @@ function renderCleanupNav() {
     wrap.appendChild(nextLink);
   } else {
     const start = document.createElement("a");
-    start.href = "contextual-broll-moments.html";
-    setCleanupScreenLink(start, "contextual-broll-moments.html");
+    start.href = "contextual-broll-moments.html?from=cleanup";
+    setCleanupScreenLink(start, "contextual-broll-moments.html?from=cleanup");
     start.textContent = "Continue: Contextual b-roll moments";
     wrap.appendChild(start);
   }

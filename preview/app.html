@@ -293,6 +293,13 @@
         }
       }
 
+      const CONTEXTUAL_VISUALS = new Set([
+        "contextual-broll-moments",
+        "contextual-title-cards",
+        "sensitive-moment-review",
+      ]);
+      const VISUALS_ENTRY_CONTEXTS = new Set(["cleanup", "style"]);
+
       const railElement = document.querySelector("#rail");
       const frame = document.querySelector("#screen");
       const crumbLabel = document.querySelector("#crumb-label");
@@ -366,19 +373,50 @@
 
       const firstScreen = STAGES[0][1][0];
 
-      function currentScreen() {
-        const hash = (window.location.hash || "").replace(/^#/, "");
-        return KNOWN.has(hash) ? hash : firstScreen;
+      function routeSearchFor(screen, rawSearch) {
+        if (!CONTEXTUAL_VISUALS.has(screen)) {
+          return "";
+        }
+        const params = new URLSearchParams(rawSearch || "");
+        const from = params.get("from");
+        return VISUALS_ENTRY_CONTEXTS.has(from) ? `?from=${from}` : "";
+      }
+
+      function currentRoute() {
+        const raw = (window.location.hash || "").replace(/^#/, "");
+        const [screenHash, rawSearch = ""] = raw.split("?");
+        const screen = KNOWN.has(screenHash) ? screenHash : firstScreen;
+        return { screen, search: routeSearchFor(screen, rawSearch) };
+      }
+
+      function visualsEntryContext(search) {
+        const from = new URLSearchParams((search || "").replace(/^\?/, "")).get("from");
+        return VISUALS_ENTRY_CONTEXTS.has(from) ? from : "";
+      }
+
+      function stepTarget(screen, index, offset, search) {
+        const context = visualsEntryContext(search);
+        const orderedTarget = ORDER[index + offset];
+        if (offset < 0 && screen === "contextual-broll-moments") {
+          if (context === "cleanup") {
+            return { screen: "on-screen-correction-note", search: "" };
+          }
+          if (context === "style") {
+            return { screen: "canvas-layer-controls", search: "" };
+          }
+        }
+        const targetSearch = CONTEXTUAL_VISUALS.has(screen) && CONTEXTUAL_VISUALS.has(orderedTarget) ? search : "";
+        return { screen: orderedTarget, search: targetSearch };
       }
 
       function route() {
-        const screen = currentScreen();
+        const { screen, search } = currentRoute();
         // Only ever load a known screen file — never an arbitrary hash value.
-        frame.src = `../prototype/${screen}.html`;
+        frame.src = `../prototype/${screen}.html${search}`;
         const label = titleCase(screen);
         crumbLabel.textContent = label;
         frame.title = `${label} screen`;
-        openDirect.href = `../prototype/${screen}.html`;
+        openDirect.href = `../prototype/${screen}.html${search}`;
         for (const [name, link] of Object.entries(linkFor)) {
           if (name === screen) {
             link.setAttribute("aria-current", "page");
@@ -390,8 +428,8 @@
         // Step through the product in workflow order.
         const index = ORDER.indexOf(screen);
         stepCount.textContent = `Screen ${index + 1} of ${ORDER.length}`;
-        setStep(prevStep, ORDER[index - 1]);
-        setStep(nextStep, ORDER[index + 1]);
+        setStep(prevStep, stepTarget(screen, index, -1, search));
+        setStep(nextStep, stepTarget(screen, index, 1, search));
 
         // Record progress through the product and reflect it in the rail.
         markVisited(screen);
@@ -399,10 +437,10 @@
       }
 
       function setStep(button, target) {
-        if (target) {
-          button.href = `#${target}`;
+        if (target.screen) {
+          button.href = `#${target.screen}${routeSearchFor(target.screen, target.search)}`;
           button.removeAttribute("aria-disabled");
-          button.title = titleCase(target);
+          button.title = titleCase(target.screen);
         } else {
           button.removeAttribute("href");
           button.setAttribute("aria-disabled", "true");

@@ -16,8 +16,10 @@ const app = fs.readFileSync(path.join(__dirname, "app.html"), "utf8");
 // Structural shell: it hosts screens in an iframe and routes via the URL hash.
 assert.match(app, /<iframe id="screen"/, "app hosts screens in an iframe");
 assert.ok(app.includes('window.addEventListener("hashchange"'), "app routes on URL hash changes");
-assert.ok(app.includes("KNOWN.has(hash)"), "app only loads a known screen from the hash (no arbitrary URL)");
-assert.ok(app.includes('frame.src = `../prototype/${screen}.html`'), "the frame loads the routed screen through the shell");
+assert.ok(app.includes("KNOWN.has(screenHash)"), "app only loads a known screen from the hash (no arbitrary URL)");
+assert.ok(app.includes('frame.src = `../prototype/${screen}.html${search}`'), "the frame loads the routed screen through the shell");
+assert.ok(app.includes("function currentRoute"), "app normalizes route hashes before loading the frame");
+assert.ok(app.includes("function routeSearchFor"), "app whitelists supported route query context");
 assert.match(app, /aria-current", "page"/, "the active screen is marked in the nav");
 assert.ok(!/innerHTML/.test(app), "app builds the nav without innerHTML");
 

@@ -11,8 +11,15 @@ const VISUALS_FLOW = [
   { id: "sensitive-moment-review", file: "sensitive-moment-review.html", label: "Sensitive moment review" },
 ];
 
+const VISUALS_SCREEN_IDS = new Set(VISUALS_FLOW.map((step) => step.id));
+const VISUALS_ENTRY_BACKLINKS = {
+  cleanup: { href: "on-screen-correction-note.html", label: "On-screen correction note" },
+  style: { href: "canvas-layer-controls.html", label: "Canvas layer controls" },
+};
+
 const PREVIEW_APP_VISUALS_TARGETS = new Set([
-  "on-screen-correction-note",
+  screenIdFromFile(VISUALS_ENTRY_BACKLINKS.cleanup.href),
+  screenIdFromFile(VISUALS_ENTRY_BACKLINKS.style.href),
   ...VISUALS_FLOW.map((step) => step.id),
   "show-segment-system",
 ]);
@@ -49,7 +56,18 @@ function isEmbeddedInPreviewApp() {
 }
 
 function previewAppHref(file) {
-  return `../preview/app.html#${screenIdFromFile(file)}`;
+  return `../preview/app.html#${screenIdFromFile(file)}${routeSearchFromFile(file)}`;
+}
+
+function routeSearchFromFile(file) {
+  const query = ((file || "").split("#")[0].split("?")[1] || "");
+  if (query === "from=style") {
+    return "?from=style";
+  }
+  if (query === "from=cleanup") {
+    return "?from=cleanup";
+  }
+  return "";
 }
 
 function setTopTargetWhenEmbedded(link) {
@@ -63,6 +81,29 @@ function setVisualsScreenLink(link, file) {
     link.href = previewAppHref(file);
     link.target = "_top";
   }
+}
+
+function visualsEntryContext() {
+  const queryParts = (window.location.search || "").replace(/^\?/, "").split("&");
+  if (queryParts.includes("from=style")) {
+    return "style";
+  }
+  if (queryParts.includes("from=cleanup")) {
+    return "cleanup";
+  }
+  return "cleanup";
+}
+
+function entryBacklink() {
+  return VISUALS_ENTRY_BACKLINKS[visualsEntryContext()] || VISUALS_ENTRY_BACKLINKS.cleanup;
+}
+
+function withVisualsContext(file) {
+  const context = visualsEntryContext();
+  if (!VISUALS_SCREEN_IDS.has(screenIdFromFile(file))) {
+    return file;
+  }
+  return `${file}?from=${context}`;
 }
 
 function renderVisualsNav() {
@@ -160,22 +201,25 @@ function renderVisualsNav() {
 
   if (previous) {
     const prevLink = document.createElement("a");
-    prevLink.href = previous.file;
-    setVisualsScreenLink(prevLink, previous.file);
+    const previousFile = withVisualsContext(previous.file);
+    prevLink.href = previousFile;
+    setVisualsScreenLink(prevLink, previousFile);
     prevLink.textContent = `Previous: ${previous.label}`;
     wrap.appendChild(prevLink);
   } else {
+    const entry = entryBacklink();
     const cleanup = document.createElement("a");
-    cleanup.href = "on-screen-correction-note.html";
-    setVisualsScreenLink(cleanup, "on-screen-correction-note.html");
-    cleanup.textContent = "Previous: On-screen correction note";
+    cleanup.href = entry.href;
+    setVisualsScreenLink(cleanup, entry.href);
+    cleanup.textContent = `Previous: ${entry.label}`;
     wrap.appendChild(cleanup);
   }
 
   if (next) {
     const nextLink = document.createElement("a");
-    nextLink.href = next.file;
-    setVisualsScreenLink(nextLink, next.file);
+    const nextFile = withVisualsContext(next.file);
+    nextLink.href = nextFile;
+    setVisualsScreenLink(nextLink, nextFile);
     nextLink.textContent = `Next: ${next.label}`;
     wrap.appendChild(nextLink);
   } else {
