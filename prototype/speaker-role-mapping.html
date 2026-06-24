@@ -444,6 +444,16 @@
 
       // Single source of truth: turn each track's role + signal + decision (plus any
       // cross-track conflict) into one of the spec's review states and a creator-facing issue.
+      // Join speaker names for a creator-facing sentence: "Dana", "Dana and Priya",
+      // "Dana, Priya and Marcus". Keeps cross-track conflict copy correct for any count.
+      function joinNames(names) {
+        const clean = names.map((name) => (name || "").trim()).filter(Boolean);
+        if (clean.length === 0) return "Two tracks";
+        if (clean.length === 1) return clean[0];
+        if (clean.length === 2) return `${clean[0]} and ${clean[1]}`;
+        return `${clean.slice(0, -1).join(", ")} and ${clean[clean.length - 1]}`;
+      }
+
       function evaluate(list) {
         // Count single-seat roles so two Hosts (or two Co-hosts) surface as a conflict
         // rather than silently letting whoever spoke first own the seat.
@@ -513,10 +523,48 @@
           return { id: track.id, state, issue };
         });
 
+        // Build the creator-facing summary list. A cross-track conflict (the same recording in
+        // several slots, or several tracks in a single-seat role) is a SINGLE problem, so it is
+        // reported once and names the speakers involved — rather than repeating an identical card
+        // for each participant (which is what mapping results straight to issues used to do).
+        // Per-track problems (no role, low-confidence, confirm-this) stay one card per track.
+        const issues = [];
+        const seenGroup = new Set();
+        results.forEach((result, index) => {
+          if (!result.issue) return;
+          const track = list[index];
+          const role = roles[track.role] ? track.role : "";
+          if (role !== "" && track.sig && sigCount[track.sig] > 1) {
+            const key = `sig:${track.sig}`;
+            if (seenGroup.has(key)) return;
+            seenGroup.add(key);
+            const names = list.filter((item) => item.sig === track.sig && roles[item.role]).map((item) => item.name);
+            issues.push({
+              title: `${joinNames(names)} use the same recording`,
+              action: `Give each speaker their own video — one recording can't fill ${names.length} speaker frames.`,
+              tone: "review",
+            });
+            return;
+          }
+          if (role !== "" && roles[role].single && seatCount[role] > 1) {
+            const key = `role:${role}`;
+            if (seenGroup.has(key)) return;
+            seenGroup.add(key);
+            const names = list.filter((item) => item.role === role).map((item) => item.name);
+            issues.push({
+              title: `${joinNames(names)} are set as ${roles[role].label}`,
+              action: `Only one ${roles[role].label} fits the layout. Confirm the real ${roles[role].label} and change the others.`,
+              tone: "review",
+            });
+            return;
+          }
+          issues.push(result.issue);
+        });
+
         const hasBlock = results.some((result) => result.state === "unassigned");
         const hasReview = results.some((result) => result.state === "review" || result.state === "suggested");
         const overall = hasBlock ? "blocked" : hasReview ? "review" : "ready";
-        return { overall, results };
+        return { overall, results, issues };
       }
 
       function render() {
@@ -532,7 +580,7 @@
             ? "Some tracks need a role"
             : "Review suggested roles";
 
-        const issues = evaluation.results.map((result) => result.issue).filter(Boolean);
+        const issues = evaluation.issues;
         issuesElement.replaceChildren(
           ...(issues.length
             ? issues.map(renderIssue)

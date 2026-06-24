@@ -107,7 +107,49 @@ assert.ok(
   "tracks without a carried identity never trigger the same-recording flag",
 );
 
-console.log("speaker role mapping: layout-first handoff hook + same-recording gate verified");
+// A cross-track conflict is one problem: the summary reports it ONCE and names the speakers
+// involved, instead of repeating an identical card for each participant.
+const sharedThree = evaluate([
+  { id: "a", name: "Dana", role: "host", sig: SIG, signal: "file-name", decision: "suggested" },
+  { id: "b", name: "Marcus", role: "guest", sig: SIG, signal: "file-name", decision: "suggested" },
+  { id: "c", name: "Priya", role: "guest", sig: SIG, signal: "file-name", decision: "suggested" },
+]);
+const sharedIssues = sharedThree.issues.filter((issue) => /same recording/i.test(issue.title));
+assert.strictEqual(
+  sharedIssues.length,
+  1,
+  "three tracks sharing one recording produce a single summary issue, not one per track",
+);
+assert.ok(
+  /Dana/.test(sharedIssues[0].title) && /Marcus/.test(sharedIssues[0].title) && /Priya/.test(sharedIssues[0].title),
+  "the shared-recording summary names every speaker involved",
+);
+assert.ok(/3 speaker frames/.test(sharedIssues[0].action), "the shared-recording summary counts the speakers, not just 'two'");
+
+const twoHosts = evaluate([
+  { id: "a", name: "Dana", role: "host", sig: "", signal: "track-label", decision: "suggested" },
+  { id: "b", name: "Priya", role: "host", sig: "", signal: "spoke-first", decision: "suggested" },
+  { id: "c", name: "Marcus", role: "guest", sig: "", signal: "speaker-name", decision: "suggested" },
+]);
+const hostIssues = twoHosts.issues.filter((issue) => /set as Host/i.test(issue.title));
+assert.strictEqual(hostIssues.length, 1, "two tracks set as the single-seat Host produce one summary issue, not two");
+assert.ok(
+  /Dana/.test(hostIssues[0].title) && /Priya/.test(hostIssues[0].title),
+  "the duplicate-host summary names both tracks",
+);
+
+// Per-track problems stay one card per track (no over-aggregation).
+const twoUnassigned = evaluate([
+  { id: "a", name: "Dana", role: "", sig: "", signal: "manual", decision: "suggested" },
+  { id: "b", name: "Marcus", role: "", sig: "", signal: "manual", decision: "suggested" },
+]);
+assert.strictEqual(
+  twoUnassigned.issues.filter((issue) => /has no role yet/i.test(issue.title)).length,
+  2,
+  "independent per-track problems are still listed individually",
+);
+
+console.log("speaker role mapping: layout-first handoff hook + same-recording gate + conflict aggregation verified");
 
 // Extract the page's evaluate() by running its inline script against a tiny DOM/window stub,
 // the same dependency-free approach used by the other prototype behavior tests.
