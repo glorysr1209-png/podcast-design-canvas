@@ -284,6 +284,25 @@
       return focusSlotInput(firstMissingRequiredZone());
     }
 
+    // The first visible slot that can still take a video (not filled, not already rejected),
+    // used to route a video dropped on the canvas but not on a specific slot.
+    function firstOpenVisibleSlot() {
+      return visibleSlots().find((zone) => {
+        return !zone.classList.contains("filled") && !zone.classList.contains("is-invalid");
+      }) || null;
+    }
+
+    function isWithinDropZone(node) {
+      let el = node;
+      while (el) {
+        if (el.classList && el.classList.contains("drop-zone")) {
+          return true;
+        }
+        el = el.parentNode;
+      }
+      return false;
+    }
+
     function updateContinueState() {
       if (!continueLink) return;
       const required = requiredSlots();
@@ -703,6 +722,33 @@
         });
       }
     });
+
+    // A video released just outside a slot would otherwise trigger the browser's default
+    // file-drop behavior — navigating away to open the file and destroying every placement the
+    // creator has made. Allow drops everywhere (a plain dragover lets the drop fire) and swallow
+    // any drop that misses a slot. When the miss lands anywhere on the page we keep the creator
+    // on the canvas; when at least one open slot exists we also route the dropped videos into it,
+    // so a near-miss still places instead of doing nothing. Slots handle their own drops, so we
+    // skip drops that landed inside a slot to avoid placing the same files twice.
+    if (typeof doc.addEventListener === "function") {
+      doc.addEventListener("dragover", (event) => {
+        event.preventDefault();
+      });
+      doc.addEventListener("drop", (event) => {
+        if (isWithinDropZone(event.target)) {
+          return;
+        }
+        event.preventDefault();
+        const files = event.dataTransfer && event.dataTransfer.files;
+        if (!files || files.length === 0) {
+          return;
+        }
+        const target = firstOpenVisibleSlot();
+        if (target) {
+          placeVideoFiles(target, files);
+        }
+      });
+    }
 
     if (resetButton) {
       resetButton.addEventListener("click", () => {
