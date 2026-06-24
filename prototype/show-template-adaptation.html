@@ -364,6 +364,10 @@
           glyph: "B",
           desc: "Apply saved brand and sponsor-safe areas if the show uses them.",
           choices: ["template", "adjust", "decide"],
+          // Brand/sponsor-safe areas are owned by the layout safe-areas screen, which
+          // checks logos and sponsor marks against the destination safe area.
+          fixScreen: "layout-safe-areas.html",
+          fixLabel: "layout safe areas",
         },
         "export-destination": {
           label: "Export destination",

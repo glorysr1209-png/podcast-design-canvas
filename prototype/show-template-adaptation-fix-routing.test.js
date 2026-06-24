@@ -31,5 +31,9 @@ assert.ok(
   fixScreens.includes("social-context-intake.html"),
   "lower-third template decision routes to social context intake",
 );
+assert.ok(
+  fixScreens.includes("layout-safe-areas.html"),
+  "brand & sponsor template decision routes to layout safe areas",
+);
 
 console.log(`show template adaptation: ${fixScreens.length} template areas open their owning fix screen`);
