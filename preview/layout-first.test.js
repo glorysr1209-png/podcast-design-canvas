@@ -182,6 +182,11 @@ assert.equal(isVideoFile(video("host.mp4")), true, "video files are accepted");
 assert.equal(isVideoFile({ name: "notes.txt", type: "text/plain" }), false, "non-video files are rejected");
 
 assert.equal(controller.requiredSlots().length, 2, "interview requires host and guest only");
+assert.match(
+  elementsById["layout-slot-status"].textContent,
+  /Still need the Host and Guest videos/,
+  "readiness copy names every missing required speaker video before any placement",
+);
 assert.equal(elementsById["layout-continue"].href, "", "disabled Continue starts without a navigation target");
 let preventedDisabledContinue = false;
 elementsById["layout-continue"].listeners.click({
@@ -195,6 +200,11 @@ assert.equal(
   elementsById["layout-continue"].attributes["aria-disabled"],
   "true",
   "interview does not continue after host alone",
+);
+assert.match(
+  elementsById["layout-slot-status"].textContent,
+  /Still need the Guest video\./,
+  "readiness copy names the one remaining required speaker video",
 );
 controller.placeVideoFile(controller.zonesBySlot.guest, video("guest.mp4"));
 assert.equal(
