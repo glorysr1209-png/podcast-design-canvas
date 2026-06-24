@@ -38,4 +38,10 @@ for (const slug of listed) {
   );
 }
 
-console.log(`catalog coverage: all ${prototypes.length} prototypes reachable from the full screen catalog`);
+// The catalog also surfaces the shell entrypoints from the top page — including the
+// unified preview app (the routing shell that hosts every screen).
+assert.ok(catalog.includes("preview/app.html"), "catalog links to the unified preview app");
+assert.ok(catalog.includes("preview/episode-flow.html"), "catalog links to the guided episode flow");
+assert.ok(catalog.includes("preview/index.html"), "catalog links to the preview shell");
+
+console.log(`catalog coverage: all ${prototypes.length} prototypes + app/flow/shell entrypoints reachable from the catalog`);
