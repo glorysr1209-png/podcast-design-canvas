@@ -41,6 +41,7 @@ assert.match(shell, /href="\.\.\/index\.html"/, "shell links back to the full sc
 assert.match(shell, /Episode path/, "shell documents the seven-step episode path");
 assert.match(shell, /Publish prep after export/, "shell documents the publish prep path");
 assert.ok(shell.includes("episode-readiness.html"), "shell links to episode readiness in setup path");
+assert.ok(shell.includes("episode-watch-through-preview.html"), "shell links to watch-through in publish path");
 assert.ok(shell.includes("export-package-handoff.html"), "shell links to export package handoff in publish path");
 
 console.log(
