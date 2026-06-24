@@ -134,6 +134,12 @@ function createPreviewAppRouting(order) {
     if (screen === "speaker-role-mapping" && path === "episode" && layoutSlots) {
       out.set("layout", layout);
       out.set("slots", layoutSlots);
+      // The layout-first handoff also flags whether optional b-roll was placed. Carry it through
+      // the shell so role mapping's load() can match the stored placement; dropping it makes the
+      // match fail and silently falls back to generic names without the carried recordings.
+      if (params.get("broll") === "placed") {
+        out.set("broll", "placed");
+      }
     }
     const search = out.toString();
     return search ? `?${search}` : "";
