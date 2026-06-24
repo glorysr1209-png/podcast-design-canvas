@@ -312,6 +312,32 @@ assert.equal(
   "cleanup nav merges publish path context onto the contextual visuals handoff",
 );
 
+const episodePathNav = renderNavFor("transcript-glossary.html", "transcript-glossary", false, "?path=episode&from=cleanup");
+assert.equal(
+  linkWithText(episodePathNav, "Previous: Pause & cross-talk cleanup").href,
+  "pause-crosstalk-cleanup.html?from=cleanup&path=episode",
+  "cleanup nav keeps cleanup context and episode path on previous links",
+);
+assert.equal(
+  linkWithText(episodePathNav, "Next: Transcript search").href,
+  "transcript-search-navigation.html?from=cleanup&path=episode",
+  "cleanup nav keeps cleanup context and episode path on next links",
+);
+
+const episodePathHandoff = renderNavFor("on-screen-correction-note.html", "on-screen-correction-note", false, "?path=episode");
+assert.equal(
+  linkWithText(episodePathHandoff, "Continue: Contextual b-roll moments").href,
+  "contextual-broll-moments.html?from=cleanup&path=episode",
+  "cleanup nav merges episode path context onto the contextual visuals handoff",
+);
+
+const embeddedEpisodeHandoff = renderNavFor("on-screen-correction-note.html", "on-screen-correction-note", true, "?path=episode");
+assert.equal(
+  linkWithText(embeddedEpisodeHandoff, "Continue: Contextual b-roll moments").href,
+  "../preview/app.html#contextual-broll-moments?from=cleanup&path=episode",
+  "embedded cleanup nav routes the episode-path contextual visuals handoff through the preview app hash",
+);
+
 function cleanupFlowContextFor(file, search) {
   const window = makeWindow("transcript-glossary.html", false, search);
   const sandbox = {

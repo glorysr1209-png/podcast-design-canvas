@@ -30,7 +30,9 @@ const PREVIEW_APP_CLEANUP_HANDOFFS = new Map([
 ]);
 const CLEANUP_ENTRY_BACKLINK = { file: "publish-checklist.html?path=publish", label: "Publish checklist" };
 const CLEANUP_ENTRY_CONTEXTS = new Set(["cleanup", "style"]);
-const CLEANUP_RETURN_PATHS = new Set(["publish"]);
+const CLEANUP_RETURN_PATHS = new Set(["publish", "episode"]);
+const CLEANUP_HANDOFF_TARGET = "contextual-broll-moments.html";
+const CLEANUP_HANDOFF_EPISODE_PATH = "episode";
 
 function currentCleanupIndex() {
   const fromBody = document.body.dataset.cleanupStep;
@@ -134,6 +136,18 @@ function isCleanupFlowFile(file) {
 }
 
 function routeSearchFromFile(file, fallbackSearch = cleanupEntrySearchFromWindow()) {
+  if (isCleanupHandoffTarget(file) && pathFromQuery(queryWithoutHash(file)) === CLEANUP_HANDOFF_EPISODE_PATH) {
+    const params = new URLSearchParams(queryWithoutHash(file));
+    const out = new URLSearchParams();
+    const from = params.get("from");
+    if (CLEANUP_ENTRY_CONTEXTS.has(from)) {
+      out.set("from", from);
+    } else {
+      out.set("from", "cleanup");
+    }
+    out.set("path", CLEANUP_HANDOFF_EPISODE_PATH);
+    return `?${out.toString()}`;
+  }
   const params = new URLSearchParams(queryWithoutHash(file));
   const from = params.get("from");
   const filePath = params.get("path");
@@ -155,9 +169,31 @@ function routeSearchFromFile(file, fallbackSearch = cleanupEntrySearchFromWindow
   return search ? `?${search}` : "";
 }
 
+function isCleanupHandoffTarget(file) {
+  return screenIdFromFile(file) === screenIdFromFile(CLEANUP_HANDOFF_TARGET);
+}
+
+// Episode-path handoff: cleanup finishes on contextual-broll-moments, which belongs on the
+// episode guided path (#583), matching the preview shell stepper transition from
+// on-screen-correction-note.
+function cleanupEpisodeHandoffHref(file) {
+  if (!isCleanupHandoffTarget(file)) {
+    return null;
+  }
+  const shellPath = new URLSearchParams(window.location.search).get("path");
+  if (shellPath !== CLEANUP_HANDOFF_EPISODE_PATH) {
+    return null;
+  }
+  const existing = pathFromQuery(queryWithoutHash(file));
+  if (existing === CLEANUP_HANDOFF_EPISODE_PATH) {
+    return file;
+  }
+  return mergeRouteSearch(file, { path: CLEANUP_HANDOFF_EPISODE_PATH });
+}
+
 function hrefWithPath(file) {
   const shellPath = new URLSearchParams(window.location.search).get("path");
-  if (shellPath !== "publish") {
+  if (shellPath !== "publish" && shellPath !== CLEANUP_HANDOFF_EPISODE_PATH) {
     return file;
   }
   if (pathFromQuery(queryWithoutHash(file)) === shellPath) {
@@ -176,6 +212,9 @@ function withCleanupFlowContext(file) {
   if (shellPath === "publish" && pathFromQuery(queryWithoutHash(file)) !== shellPath) {
     overrides.path = shellPath;
   }
+  if (shellPath === CLEANUP_HANDOFF_EPISODE_PATH && pathFromQuery(queryWithoutHash(file)) !== shellPath) {
+    overrides.path = shellPath;
+  }
   if (Object.keys(overrides).length === 0) {
     return file;
   }
@@ -183,6 +222,10 @@ function withCleanupFlowContext(file) {
 }
 
 function hrefWithCleanupContext(file) {
+  const handoff = cleanupEpisodeHandoffHref(file);
+  if (handoff) {
+    return handoff;
+  }
   if (isCleanupFlowFile(file)) {
     return withCleanupFlowContext(file);
   }
